@@ -6,7 +6,7 @@ from typing import Dict
 
 app = FastAPI()
 
-class EntryResponseData(BaseModel):
+class EntrypointResponseData(BaseModel):
     total_positive: int
     total_recovered: int
     total_deaths: int
@@ -16,9 +16,9 @@ class EntryResponseData(BaseModel):
     new_deaths: int
     new_active: int
 
-class EntryResponse(BaseModel):
+class EntrypointResponse(BaseModel):
     ok: bool
-    data: EntryResponseData
+    data: EntrypointResponseData
     message: str
 
 def create_single_REST_response():
@@ -35,7 +35,7 @@ def create_multi_REST_response():
         "message": "success"
     }
 
-@app.get("/", response_model=EntryResponse)
+@app.get("/", response_model=EntrypointResponse)
 async def index():
     httpx_response_JSON = httpx.get("https://data.covid19.go.id/public/api/update.json").json()
     response_body = create_single_REST_response()
