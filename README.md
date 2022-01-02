@@ -25,3 +25,8 @@ pip install -r requirements.txt
 ```
 uvicorn app.main:app --reload
 ```
+
+## Notes
+
+- Active cases
+The number of confirmed cases minus the number of recovered cases and deaths. It is the number of cases still considered to be infectious.
