@@ -1,8 +1,9 @@
 import httpx
 import time
 import calendar
+import re
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, status
 from pydantic import BaseModel
 from typing import Dict, List, Optional
 from datetime import date
@@ -225,6 +226,36 @@ def find_data_by_dates(since, upto):
     
     return result
 
+def regex_date_query_generator(type):
+    regex_string = "("
+    for year in range(int(EARLIEST_YEAR_CASE), int(LATEST_YEAR_CASE) + 1, 1):
+        if year == int(LATEST_YEAR_CASE):
+            regex_string += str(year) + ").("
+        else:
+            regex_string += str(year) + "|"
+    
+    for month in range(1, 12 + 1, 1):
+        if month == 12:
+            regex_string += str(month) + ")"
+        elif month >= 10:
+            regex_string += str(month) + "|" 
+        else:
+            regex_string += "0" + str(month) + "|"
+    
+    if type == "DATE":
+        regex_string += ".("
+        for day in range(1, 31 + 1, 1):
+            if day == 31:
+                regex_string += str(day) + ")"
+            elif day >= 10:
+                regex_string += str(day) + "|"
+            else:
+                regex_string += "0" + str(day) + "|"
+    
+    return regex_string
+    
+    
+        
 
 
 
@@ -249,6 +280,17 @@ async def index():
 async def yearly_multi(since: Optional[int] = int(EARLIEST_YEAR_CASE), upto: Optional[int] = int(LATEST_YEAR_CASE)):
     response_body = create_multi_REST_response()
 
+    if(since < int(EARLIEST_YEAR_CASE) or upto > int(LATEST_YEAR_CASE)):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Query parameters error! SINCE must be higher or equal than " + EARLIEST_YEAR_CASE +" and UPTO can't be higher than " + LATEST_YEAR_CASE +"!"
+        )
+
+    if(since > upto):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Query parameters error! SINCE can't be a higher value than UPTO!")
+
     for year in range(since, upto+1, 1):
         response_body["data"].append(find_data_by_year(year))
 
@@ -256,6 +298,18 @@ async def yearly_multi(since: Optional[int] = int(EARLIEST_YEAR_CASE), upto: Opt
 
 @app.get("/yearly/{year}", response_model=YearlyResponseSingle)
 async def yearly_single(year: str):
+    if(not year.isnumeric()):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Value error! the provided YEAR must be an integer! with a value between " + EARLIEST_YEAR_CASE +" and " + LATEST_YEAR_CASE +"!"
+        )
+
+    if(int(year) < int(EARLIEST_YEAR_CASE) or int(year) > int(LATEST_YEAR_CASE)):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Value error! the provided YEAR must be higher or equal than " + EARLIEST_YEAR_CASE +" and can't be higher than " + LATEST_YEAR_CASE +"!"
+        )
+
     response_body = create_single_REST_response()
     response_body["data"] = find_data_by_year(year)
 
@@ -263,6 +317,13 @@ async def yearly_single(year: str):
 
 @app.get("/monthly", response_model=MonthlyResponseMulti)
 async def monthly_multi(since: Optional[str] = EARLIEST_YEAR_MONTH_CASE, upto: Optional[str] = LATEST_YEAR_MONTH_CASE):
+
+    if (not re.search(regex_date_query_generator("MONTH"), since) or not re.search(regex_date_query_generator("MONTH"), upto)):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Query parameter error! SINCE and UPTO must be a valid date in the format of 'YYYY.MM'. Valid values for YYYY are the value of integers between " + EARLIEST_YEAR_CASE + " and " + LATEST_YEAR_CASE)
+
+
     response_body = create_multi_REST_response()
     since_year_month = since.split(".")
     upto_year_month = upto.split(".")
@@ -286,6 +347,12 @@ async def monthly_multi(since: Optional[str] = EARLIEST_YEAR_MONTH_CASE, upto: O
     
 @app.get("/monthly/{year}", response_model=MonthlyResponseMulti)
 async def monthly_year_multi(year: str, since: Optional[str] = None, upto: Optional[str] = None):
+    if((not year.isnumeric()) or (int(year) < int(EARLIEST_YEAR_CASE)) or (int(year) > int(LATEST_YEAR_CASE))):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail= "the provided YEAR must be an integer value between " + EARLIEST_YEAR_CASE + " and " + LATEST_YEAR_CASE + "!"
+            )
+
     response_body = create_multi_REST_response()
 
     since_year_month = ""
@@ -304,6 +371,24 @@ async def monthly_year_multi(year: str, since: Optional[str] = None, upto: Optio
         upto_year_month = ((LATEST_YEAR_MONTH_CASE).split("."))
     else:
         upto_year_month = ((year + ".12").split("."))
+    
+    if (since_year_month[0] != year or upto_year_month[0] != year):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Query parameter error! year in SINCE or UPTO must match with the provided YEAR!"
+        )
+    
+    if (int(since_year_month[1]) > int(upto_year_month[1])):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Query parameter error! month in SINCE must be lower or equal to month in UPTO!" 
+        )
+    
+    if (int(since_year_month[1]) < 1 or int(since_year_month[1]) > 12 or int(upto_year_month[1]) > 12):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Query parameter error! Invalid month value in SINCE or UPTO!"
+        )
 
     for month in range(int(since_year_month[1]), int(upto_year_month[1]) + 1, 1):
         response_body["data"].append(find_data_by_year_month(year, month))
@@ -312,6 +397,24 @@ async def monthly_year_multi(year: str, since: Optional[str] = None, upto: Optio
 
 @app.get("/monthly/{year}/{month}", response_model=MonthlyResponseSingle)
 async def monthly_year_month_single(year: str, month: str):
+    if(not year.isnumeric() or not month.isnumeric()):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="YEAR and MONTH must be an integer!"
+        )
+
+    if(int(year) < int(EARLIEST_YEAR_CASE) or int(year) > int(LATEST_YEAR_CASE)):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid YEAR value! YEAR must be an integer with a value between " + EARLIEST_YEAR_CASE + " and " + LATEST_YEAR_CASE + "!"
+        )
+    
+    if(int(month) < 1 or int(month) > 12):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid MONTH value! MONTH must be an integer with a value between 1 and 12!"
+        )
+
     response_body = create_single_REST_response()
 
     response_body["data"] = find_data_by_year_month(year, month)
@@ -320,6 +423,11 @@ async def monthly_year_month_single(year: str, month: str):
 
 @app.get("/daily", response_model=DailyResponseMulti)
 async def daily_multi(since: Optional[str] = EARLIEST_DATE_CASE, upto: Optional[str] = LATEST_DATE_CASE):
+    if (not re.search(regex_date_query_generator("DATE"), since) or not re.search(regex_date_query_generator("DATE"), upto)):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Query parameter error! SINCE and UPTO must be a valid date in the format of 'YYYY.MM.DD'. Valid values for YYYY are the value of integers between " + EARLIEST_YEAR_CASE + " and " + LATEST_YEAR_CASE)
+
     response_body = create_multi_REST_response()
 
     formatted_since = "-".join((since.split(".")))
@@ -331,6 +439,12 @@ async def daily_multi(since: Optional[str] = EARLIEST_DATE_CASE, upto: Optional[
 
 @app.get("/daily/{year}", response_model=DailyResponseMulti)
 async def daily_multi_year(year: str,since: Optional[str] = None, upto: Optional[str] = None):
+    if((not year.isnumeric()) or (int(year) < int(EARLIEST_YEAR_CASE)) or (int(year) > int(LATEST_YEAR_CASE))):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail= "the provided YEAR must be an integer value between " + EARLIEST_YEAR_CASE + " and " + LATEST_YEAR_CASE + "!"
+        )
+
     response_body = create_multi_REST_response()
 
     formatted_since = ""
@@ -362,6 +476,17 @@ async def daily_multi_year(year: str,since: Optional[str] = None, upto: Optional
 
 @app.get("/daily/{year}/{month}", response_model=DailyResponseMulti)
 async def daily_multi_year_month(year: str, month: str, since: Optional[str] = None, upto: Optional[str] = None):
+    if((not year.isnumeric()) or (int(year) < int(EARLIEST_YEAR_CASE)) or (int(year) > int(LATEST_YEAR_CASE))):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail= "the provided YEAR must be an integer value between " + EARLIEST_YEAR_CASE + " and " + LATEST_YEAR_CASE + "!"
+        )
+    if((not month.isnumeric()) or (int(month) < 1) or (int(month) > 12)):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail= "the provided MONTH must be an integer value between 1 and 12!"
+        )
+
     response_body = create_multi_REST_response()
 
     formatted_since = ""
@@ -386,19 +511,25 @@ async def daily_multi_year_month(year: str, month: str, since: Optional[str] = N
 
 @app.get("/daily/{year}/{month}/{date}", response_model=DailyResponseSingle)
 async def daily_multi_year_month_date(year: str, month: str, date: str):
+    if((not year.isnumeric()) or (int(year) < int(EARLIEST_YEAR_CASE)) or (int(year) > int(LATEST_YEAR_CASE))):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail= "the provided YEAR must be an integer value between " + EARLIEST_YEAR_CASE + " and " + LATEST_YEAR_CASE + "!"
+        )
+    if((not month.isnumeric()) or (int(month) < 1) or (int(month) > 12)):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail= "the provided MONTH must be an integer value between 1 and 12!"
+        )
+    if((not date.isnumeric()) or (int(date) < 1) or (int(date) > 31)):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail= "the provided DATE must be an integer value between 1 and 31!"
+        )
+
     response_body = create_single_REST_response()
     formatted_date = year + "-" + month + "-" + date
 
     response_body["data"] = find_data_by_dates(formatted_date, formatted_date)[0]
 
     return response_body
-
-
-
-
-
-
-@app.get("/test")
-async def test():
-    r = httpx.get("https://data.covid19.go.id/public/api/update.json")
-    return r.json()
