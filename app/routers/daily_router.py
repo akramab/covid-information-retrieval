@@ -24,5 +24,5 @@ async def daily_multi_year_month(year: str, month: str, since: Optional[str] = N
     return daily_service.daily_multi_year_month(year, month, since, upto)
    
 @router.get("/{year}/{month}/{date}", response_model=daily_schema.DailyResponseSingle)
-async def daily_multi_year_month_date(year: str, month: str, date: str):
-    return daily_service.daily_multi_year_month_date(year, month, date)
+async def daily_single_year_month_date(year: str, month: str, date: str):
+    return daily_service.daily_single_year_month_date(year, month, date)

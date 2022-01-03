@@ -90,7 +90,7 @@ def daily_multi_year_month(year: str, month: str, since: Optional[str] = None, u
 
     return response_body
 
-def daily_multi_year_month_date(year: str, month: str, date: str):
+def daily_single_year_month_date(year: str, month: str, date: str):
     if((not year.isnumeric()) or (int(year) < int(constant.EARLIEST_YEAR_CASE)) or (int(year) > int(constant.LATEST_YEAR_CASE))):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
