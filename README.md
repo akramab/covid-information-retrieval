@@ -105,3 +105,6 @@ Most of the limitation within this app came from my own inexperience from using 
 Potential Issues in this app will mostly come from the unhandled corner cases Exception that haven't been implemented yed.
 
 I think this app could have a lot of improvement. For example, by using more Object Oriented approach, all of the codes in this project could be more concisely and cleanly written. This app could also implement caching, by using Redis for example, to make sure that the repeted operations could be done faster. And last but not least this app could also implement some limiter to make sure that if the app is ran more than once in the same day, it will only fetch the API data once. Because as we all know, the APIs that's used to get all the COVID data is updated daily, so it's unnecessary to make a request everytime the app is ran.
+
+##Screenshots
+[![image.png](https://i.postimg.cc/hjFtM3N7/image.png)](https://postimg.cc/gwDp24zY)
