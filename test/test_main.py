@@ -12,6 +12,9 @@ VALID_YEAR = 2021
 VALID_MONTH = 10
 VALID_DAY = 27
 
+INVALID_MONTH = 13
+INVALID_DAY = 32
+
 SUCCESS_MESSAGE = "success"
 
 client = TestClient(main.app)
