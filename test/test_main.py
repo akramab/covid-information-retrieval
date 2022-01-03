@@ -30,6 +30,14 @@ MONTHLY_MULTI_ERROR_MESSAGE = "Query parameter error! SINCE and UPTO must be a v
 MONTHLY_YEAR_MULTI_ERROR_MESSAGE = "the provided YEAR must be an integer value between " + constant.EARLIEST_YEAR_CASE + " and " + constant.LATEST_YEAR_CASE + "!"
 MONTHLY_YEAR_MULTI_SINCE_UPTO_ERROR_MESSAGE = "Query parameter error! year in SINCE or UPTO must match with the provided YEAR!"
 MONTHLY_YEAR_MULTI_SINCE_HIGHER_ERROR_MESSAGE = "Query parameter error! month in SINCE must be lower or equal to month in UPTO!" 
+MONTHLY_YEAR_MULTI_SINCE_UPTO_INVALID_ERROR_MESSAGE = "Query parameter error! Invalid month value in SINCE or UPTO!"
+MONTHLY_YEAR_MONTH_INTEGER_ERROR_MESSAGE = "YEAR and MONTH must be an integer!"
+MONTHLY_YEAR_MONTH_INTEGER_INVALID_YEAR_ERROR_MESSAGE = "Invalid YEAR value! YEAR must be an integer with a value between " + constant.EARLIEST_YEAR_CASE + " and " + constant.LATEST_YEAR_CASE + "!"
+MONTHLY_YEAR_MONTH_INTEGER_INVALID_MONTH_ERROR_MESSAGE = "Invalid MONTH value! MONTH must be an integer with a value between 1 and 12!"
+
+DAILY_MULTI_INVALID_ERROR_MESSAGE = "Query parameter error! SINCE and UPTO must be a valid date in the format of 'YYYY.MM.DD'. Valid values for YYYY are the value of integers between " + constant.EARLIEST_YEAR_CASE + " and " + constant.LATEST_YEAR_CASE
+DAILY_YEAR_MULTI_INVALID_ERROR_MESSAGE = "the provided YEAR must be an integer value between " + constant.EARLIEST_YEAR_CASE + " and " + constant.LATEST_YEAR_CASE + "!"
+
 
 client = TestClient(main.app)
 
@@ -198,3 +206,45 @@ def test_get_invalid_monthly_year_since_higher_invalid_multi():
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert response.json()["detail"] == MONTHLY_YEAR_MULTI_SINCE_HIGHER_ERROR_MESSAGE
+
+#Negative
+def test_get_invalid_monthly_year_upto_higher_invalid_multi():
+    response = client.get(f"{MONTHLY_API}/{VALID_YEAR}" + "?upto=" + str(VALID_YEAR) + ".13" )
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json()["detail"] == MONTHLY_YEAR_MULTI_SINCE_UPTO_INVALID_ERROR_MESSAGE
+
+#Negative
+def test_get_invalid_monthly_year_month_single():
+    response = client.get(f"{MONTHLY_API}/{VALID_YEAR}/{RANDOM_STRING}")
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json()["detail"] == MONTHLY_YEAR_MONTH_INTEGER_ERROR_MESSAGE
+
+#Negative
+def test_get_invalid_monthly_year_higher_month_single():
+    response = client.get(f"{MONTHLY_API}/{INVALID_YEAR_HIGHER}/{VALID_MONTH}")
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json()["detail"] == MONTHLY_YEAR_MONTH_INTEGER_INVALID_YEAR_ERROR_MESSAGE
+
+#Negative
+def test_get_invalid_monthly_year_month_higher_single():
+    response = client.get(f"{MONTHLY_API}/{VALID_YEAR}/{INVALID_MONTH}")
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json()["detail"] == MONTHLY_YEAR_MONTH_INTEGER_INVALID_MONTH_ERROR_MESSAGE
+
+#Negative
+def test_get_invalid_daily_multi():
+    response = client.get(f"{DAILY_API}?since={RANDOM_STRING}")
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json()["detail"] == DAILY_MULTI_INVALID_ERROR_MESSAGE
+
+#Negative
+def test_get_invalid_daily_year_multi():
+    response = client.get(f"{DAILY_API}/{RANDOM_STRING}")
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json()["detail"] == DAILY_YEAR_MULTI_INVALID_ERROR_MESSAGE
