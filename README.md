@@ -1,4 +1,4 @@
-# nodeflux-se-tech-assesment
+# covid-information-retrieval
 
 ## 📖  How to Run #1 (Non-Docker Version)
 
