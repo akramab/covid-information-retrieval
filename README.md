@@ -100,11 +100,9 @@ This directory only contains test_main.py file that's used to hold all the testi
 
 
 ## Limitation, Potential Issues, and Future Ideations
-Most of the limitation within this app came from my own inexperience from using Python and also FastAPI. This project is actually my first actual backend server that I made using Python and FastAPI (I came from Java Spring Boot background). So I am very sorry if the project structure kinda resembles Java project structure a lot, and doesn't really reflect how a Python project structure should really be.
-
 Potential Issues in this app will mostly come from the unhandled corner cases Exception that haven't been implemented yed.
 
-I think this app could have a lot of improvement. For example, by using more Object Oriented approach, all of the codes in this project could be more concisely and cleanly written. This app could also implement caching, by using Redis for example, to make sure that the repeted operations could be done faster. And last but not least this app could also implement some limiter to make sure that if the app is ran more than once in the same day, it will only fetch the API data once. Because as we all know, the APIs that's used to get all the COVID data is updated daily, so it's unnecessary to make a request everytime the app is ran.
+I think this app could have a lot of improvement. For example, by using more Object Oriented approach, all of the codes in this project could be more concisely and cleanly written. This app could also implement caching, by using Redis for example, to make sure that the repeated operations could be done faster. And last but not least this app could also implement some limiter to make sure that if the app is ran more than once in the same day, it will only fetch the API data once. Because as we all know, the APIs that's used to get all the COVID data is updated daily, so it's unnecessary to make a request everytime the app is ran.
 
 ## Screenshots
 [![image.png](https://i.postimg.cc/hjFtM3N7/image.png)](https://postimg.cc/gwDp24zY)
